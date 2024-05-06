@@ -1,10 +1,16 @@
 import asyncio
 import dataclasses
+import logging
 import os
 
 import zmq.asyncio
 
 SERVER_URL = os.environ.get("SERVER_URL")
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+)
 
 
 @dataclasses.dataclass
@@ -23,18 +29,23 @@ class MessageParser:
     def parse(self) -> Message:
         parts = self._message.split(';')
         if len(parts) != 6:
+            logging.error(f'Unexpected message format: {len(self._message)} parts')
             raise ValueError(f"Unexpected data format")
 
         name, latitude, longitude, heading, measurement, verification_id = parts
 
-        latitude = float(latitude)
-        longitude = float(longitude)
-        heading = float(heading)
-        measurement = float(measurement)
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            heading = float(heading)
+            measurement = float(measurement)
+        except ValueError:
+            logging.error(f'Invalid message format: cannot parse numbers: {parts[1:]}')
+            raise ValueError(f'Invalid data format: {latitude}, {longitude}')
 
         message = Message(name, latitude, longitude, heading, measurement)
 
-        print(message)
+        logging.debug(f"Parsed message: '{message}'")
         return message
 
 
@@ -62,11 +73,11 @@ class Ingestor:
         try:
             while True:
                 message_str = await self._subscriber.recv_string()
-                print("Received message:", message_str)
+                logging.info(f"Received message: {message_str}")
                 message = MessageParser(message_str).parse()
                 await MessageHandler(message).handle_message()
         except KeyboardInterrupt:
-            print("Program interrupted by user")
+            logging.info("Program interrupted by user")
         finally:
             self._subscriber.close()
             self._context.term()
