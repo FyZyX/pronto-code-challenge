@@ -41,26 +41,15 @@ class MessageParser:
         return parts
 
     def parse(self) -> Message:
-        try:
-            parts = self._get_parts()
-        except ValueError as e:
-            err_msg = f"Unexpected message format: {e}"
-            logging.error(err_msg)
-            raise ValueError(err_msg)
-
-        try:
-            message = Message(
-                name=parts[0],
-                latitude=float(parts[1]),
-                longitude=float(parts[2]),
-                heading=float(parts[3]),
-                measurement=float(parts[4]),
-                verification_id=parts[5],
-            )
-        except ValueError:
-            err_msg = f"Invalid data format: cannot parse numbers {parts[1:5]}"
-            logging.error(err_msg)
-            raise ValueError(err_msg)
+        parts = self._get_parts()
+        message = Message(
+            name=parts[0],
+            latitude=float(parts[1]),
+            longitude=float(parts[2]),
+            heading=float(parts[3]),
+            measurement=float(parts[4]),
+            verification_id=parts[5],
+        )
 
         logging.debug(f"Parsed message: '{message}'")
         return message
@@ -70,11 +59,14 @@ class MessageHandler:
     def __init__(self, message: Message):
         self._message = message
 
+    async def _process_message(self) -> Message:
+        # TODO: Processing logic here (calculate, update storage)
+        await asyncio.sleep(1)  # Sleep for a bit to simulate processing time
+        return self._message
+
     async def handle_message(self) -> Message:
         try:
-            # TODO: Processing logic here (calculate, update storage)
-            await asyncio.sleep(1)  # Sleep for a bit to simulate processing time
-            return self._message
+            return await self._process_message()
         except asyncio.CancelledError as e:
             err_msg = f"Cancelled message processing: {e}"
             logging.error(err_msg)
@@ -87,33 +79,37 @@ class Ingestor:
         self._context = zmq.asyncio.Context()
         self._subscriber = self._context.socket(zmq.SUB)
 
-    def _subscribe(self, topic: str):
+    def _start(self, topic: str):
         self._subscriber.connect(self._server_url)
         self._subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
+
+    def _stop(self):
+        self._subscriber.close()
+        self._context.term()
 
     async def _on_message(self):
         message_str = await self._subscriber.recv_string()
         logging.info(f"Received message: {message_str}")
-        try:
-            message = MessageParser(message_str).parse()
-        except ValueError as e:
-            logging.error(f"Bad message: {e}")
-        else:
-            await MessageHandler(message).handle_message()
+        message = MessageParser(message_str).parse()
+        await MessageHandler(message).handle_message()
 
     async def _run_ingest_loop(self):
-        try:
-            while True:
-                await self._on_message()
-        except IOError:
-            logging.info("Program interrupted by user")
-        finally:
-            self._subscriber.close()
-            self._context.term()
+        while True:
+            await self._on_message()
 
     async def ingest(self, topic: str = ""):
-        self._subscribe(topic)
-        await self._run_ingest_loop()
+        self._start(topic)
+
+        try:
+            await self._run_ingest_loop()
+        except IOError:
+            logging.warning("Program interrupted by user")
+        except ValueError as e:
+            logging.error(f"Bad message: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+        finally:
+            self._stop()
 
 
 def main():
