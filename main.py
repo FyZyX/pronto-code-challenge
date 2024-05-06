@@ -20,30 +20,47 @@ class Message:
     longitude: float
     heading: float
     measurement: float
+    verification_id: str
 
 
 class MessageParser:
+    _expected_num_parts = 6
+
     def __init__(self, message: str):
         self._message = message
 
-    def parse(self) -> Message:
+    def _get_parts(self) -> list[str]:
         parts = self._message.split(';')
-        if len(parts) != 6:
-            logging.error(f'Unexpected message format: {len(self._message)} parts')
-            raise ValueError(f"Unexpected data format")
 
-        name, latitude, longitude, heading, measurement, verification_id = parts
+        if len(parts) != self._expected_num_parts:
+            raise ValueError(
+                f"incorrect number of parts: {len(parts)}"
+                f" (expected {self._expected_num_parts})"
+            )
+
+        return parts
+
+    def parse(self) -> Message:
+        try:
+            parts = self._get_parts()
+        except ValueError as e:
+            err_msg = f"Unexpected message format: {e}"
+            logging.error(err_msg)
+            raise ValueError(err_msg)
 
         try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-            heading = float(heading)
-            measurement = float(measurement)
+            message = Message(
+                name=parts[0],
+                latitude=float(parts[1]),
+                longitude=float(parts[2]),
+                heading=float(parts[3]),
+                measurement=float(parts[4]),
+                verification_id=parts[5],
+            )
         except ValueError:
-            logging.error(f'Invalid message format: cannot parse numbers: {parts[1:]}')
-            raise ValueError(f'Invalid data format: {latitude}, {longitude}')
-
-        message = Message(name, latitude, longitude, heading, measurement)
+            err_msg = f"Invalid data format: cannot parse numbers {parts[1:5]}"
+            logging.error(err_msg)
+            raise ValueError(err_msg)
 
         logging.debug(f"Parsed message: '{message}'")
         return message
@@ -69,13 +86,20 @@ class Ingestor:
         self._subscriber.connect(self._server_url)
         self._subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
 
+    async def _on_message(self):
+        message_str = await self._subscriber.recv_string()
+        logging.info(f"Received message: {message_str}")
+        try:
+            message = MessageParser(message_str).parse()
+        except ValueError as e:
+            logging.error(f"Bad message: {e}")
+        else:
+            await MessageHandler(message).handle_message()
+
     async def _run_ingest_loop(self):
         try:
             while True:
-                message_str = await self._subscriber.recv_string()
-                logging.info(f"Received message: {message_str}")
-                message = MessageParser(message_str).parse()
-                await MessageHandler(message).handle_message()
+                await self._on_message()
         except KeyboardInterrupt:
             logging.info("Program interrupted by user")
         finally:
