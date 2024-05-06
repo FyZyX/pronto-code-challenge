@@ -71,9 +71,14 @@ class MessageHandler:
         self._message = message
 
     async def handle_message(self) -> Message:
-        # TODO: Processing logic here (calculate, update storage)
-        await asyncio.sleep(1)  # Sleep for a bit to simulate processing time
-        return self._message
+        try:
+            # TODO: Processing logic here (calculate, update storage)
+            await asyncio.sleep(1)  # Sleep for a bit to simulate processing time
+            return self._message
+        except asyncio.CancelledError as e:
+            err_msg = f"Cancelled message processing: {e}"
+            logging.error(err_msg)
+            raise IOError(err_msg)
 
 
 class Ingestor:
@@ -100,7 +105,7 @@ class Ingestor:
         try:
             while True:
                 await self._on_message()
-        except KeyboardInterrupt:
+        except IOError:
             logging.info("Program interrupted by user")
         finally:
             self._subscriber.close()
@@ -112,8 +117,15 @@ class Ingestor:
 
 
 def main():
+    if not SERVER_URL:
+        raise EnvironmentError("Server URL not set")
+
     ingestor = Ingestor(SERVER_URL)
-    asyncio.run(ingestor.ingest())
+    try:
+        asyncio.run(ingestor.ingest())
+    except KeyboardInterrupt as e:
+        logging.fatal(e)
+        exit(1)
 
 
 if __name__ == "__main__":
