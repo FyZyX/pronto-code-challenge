@@ -2,6 +2,7 @@ import asyncio
 import dataclasses
 import logging
 import os
+import signal
 
 import zmq.asyncio
 
@@ -67,10 +68,8 @@ class MessageHandler:
     async def handle_message(self) -> Message:
         try:
             return await self._process_message()
-        except asyncio.CancelledError as e:
-            err_msg = f"Cancelled message processing: {e}"
-            logging.error(err_msg)
-            raise IOError(err_msg)
+        except asyncio.CancelledError:
+            logging.error("Cancelled message processing")
 
 
 class Ingestor:
@@ -78,14 +77,12 @@ class Ingestor:
         self._server_url = server_url
         self._context = zmq.asyncio.Context()
         self._subscriber = self._context.socket(zmq.SUB)
+        self._running = asyncio.Event()
+        self._running.set()
 
-    def _start(self, topic: str):
+    def _subscribe(self, topic: str):
         self._subscriber.connect(self._server_url)
         self._subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
-
-    def _stop(self):
-        self._subscriber.close()
-        self._context.term()
 
     async def _on_message(self):
         message_str = await self._subscriber.recv_string()
@@ -94,22 +91,37 @@ class Ingestor:
         await MessageHandler(message).handle_message()
 
     async def _run_ingest_loop(self):
-        while True:
+        while self._running.is_set():
             await self._on_message()
 
+    async def stop(self):
+        self._running.clear()
+
     async def ingest(self, topic: str = ""):
-        self._start(topic)
+        self._subscribe(topic)
 
         try:
             await self._run_ingest_loop()
-        except IOError:
-            logging.warning("Program interrupted by user")
         except ValueError as e:
             logging.error(f"Bad message: {e}")
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
         finally:
-            self._stop()
+            self._subscriber.close()
+            self._context.term()
+
+
+async def stop_all_tasks():
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    for task in tasks:
+        task.cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+def handle_signal(ingestor: Ingestor, loop):
+    logging.info("Signal received, stopping...")
+    loop.create_task(ingestor.stop())
+    loop.create_task(stop_all_tasks())
 
 
 def main():
@@ -117,11 +129,17 @@ def main():
         raise EnvironmentError("Server URL not set")
 
     ingestor = Ingestor(SERVER_URL)
+    loop = asyncio.get_event_loop()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, handle_signal, ingestor, loop)
+
     try:
-        asyncio.run(ingestor.ingest())
-    except KeyboardInterrupt as e:
-        logging.fatal(e)
-        exit(1)
+        loop.run_until_complete(ingestor.ingest())
+    except Exception as e:
+        logging.error(e)
+    finally:
+        logging.info("Program interrupted")
 
 
 if __name__ == "__main__":
