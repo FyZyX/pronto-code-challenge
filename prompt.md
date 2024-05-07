@@ -38,5 +38,3 @@ Each value of `float` is at most 999 with only one fractional digit. String valu
 ### Subscribing
 
 Subscribe to the data flow by opening a ZMQ subscriber and connecting to the **SERVER URL**.
-applicant-README.txt
-Displaying applicant-README.txt.
