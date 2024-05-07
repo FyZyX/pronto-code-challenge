@@ -4,9 +4,6 @@ from typing import Callable
 
 import zmq.asyncio
 
-from .model import Message
-from .parser import MessageParser
-
 
 class Ingestor:
     def __init__(self, server_url: str, on_message: Callable[[str], None]):
@@ -19,19 +16,10 @@ class Ingestor:
         self._subscriber.connect(self._server_url)
         self._subscriber.subscribe(topic)
 
-    def _handle_message(self, message_str):
-        try:
-            message = MessageParser(message_str).parse()
-        except ValueError as e:
-            logging.error(f"Bad message: {e}")
-        else:
-            logging.debug(f"Received message: {message}")
-            self._on_message(message)
-
     async def _start(self, stop_event: asyncio.Event):
         while stop_event.is_set():
             message_str = await self._subscriber.recv_string()
-            self._handle_message(message_str)
+            self._on_message(message_str)
 
     def _stop(self):
         self._subscriber.close()
