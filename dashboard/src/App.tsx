@@ -1,18 +1,9 @@
 import {Component, createEffect, createSignal} from 'solid-js';
+import Map from "./components/Map";
 
-import logo from './logo.svg';
 import styles from './App.module.css';
+import Metric from "./model";
 
-type Metric = {
-    name: string;
-    mean_measurement: number;
-    min_measurement: number;
-    max_measurement: number;
-    last_latitude: number;
-    last_longitude: number;
-    last_heading: number;
-    count: number;
-};
 
 const App: Component = () => {
     const [metrics, setMetrics] = createSignal<Metric[]>([]);
@@ -65,6 +56,7 @@ const App: Component = () => {
                     ))}
                     </tbody>
                 </table>
+                <Map metrics={metrics()}/>
             </main>
         </div>
     );

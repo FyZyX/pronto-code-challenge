@@ -9,12 +9,16 @@
     "serve": "vite preview"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/leaflet-rotatedmarker": "^0.2.5",
     "solid-devtools": "^0.30.1",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
     "vite-plugin-solid": "^2.10.2"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
+    "leaflet-rotatedmarker": "^0.2.0",
     "solid-js": "^1.8.17"
   }
 }
