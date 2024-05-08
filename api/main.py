@@ -1,6 +1,7 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from psycopg_pool import AsyncConnectionPool
 
 app = FastAPI()
@@ -11,7 +12,18 @@ DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 DB_NAME = os.environ.get("POSTGRES_DB")
 DATABASE_DSN = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
 
+DASHBOARD_HOST = os.environ.get("DASHBOARD_HOST", "localhost")
+DASHBOARD_PORT = os.environ.get("DASHBOARD_PORT", 3001)
+
 pool = AsyncConnectionPool(DATABASE_DSN, open=False)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[f"http://{DASHBOARD_HOST}:{DASHBOARD_PORT}"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
