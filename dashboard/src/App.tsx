@@ -34,7 +34,7 @@ const App: Component = () => {
     return (
         <div class={styles.App}>
             <header class={styles.header}>
-                <h1>Top Metrics</h1>
+                <h1>Key Metrics</h1>
             </header>
             <main>
                 <table>
