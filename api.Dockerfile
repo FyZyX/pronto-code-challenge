@@ -1,6 +1,6 @@
-FROM python:3.12-slim
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11
 
-WORKDIR /usr/src
+WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
@@ -12,11 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     libpq-dev
 
-COPY ./ingest/requirements.txt requirements.txt
+COPY ./api/requirements.txt requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-COPY ./ingest/ingestor ingestor
-COPY ./ingest/main.py main.py
+COPY ./api/main.py main.py
 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

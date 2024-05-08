@@ -3,9 +3,9 @@ import logging
 import os
 import signal
 
-from ingest.handler import MessageHandler
-from ingest.ingestor import Ingestor
-from ingest.parser import MessageParser
+from ingestor.handler import MessageHandler
+from ingestor.ingestor import Ingestor
+from ingestor.parser import MessageParser
 
 SERVER_URL = os.environ.get("SERVER_URL")
 
