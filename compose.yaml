@@ -8,7 +8,16 @@ services:
       - .env
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
     restart: always
+
+  playground:
+    build:
+      dockerfile: ingest.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - timescaledb
 
 volumes:
   timescaledb_data:

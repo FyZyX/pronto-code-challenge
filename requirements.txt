@@ -1,3 +1,4 @@
-pyzmq~=26.0.3
 pandas~=2.2.2
+psycopg~=3.1.18
+pyzmq~=26.0.3
 numpy~=1.26.4

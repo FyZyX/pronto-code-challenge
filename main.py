@@ -10,7 +10,7 @@ from ingest.parser import MessageParser
 SERVER_URL = os.environ.get("SERVER_URL")
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
 )
 
@@ -29,6 +29,7 @@ async def _stop_all_tasks():
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     for task in tasks:
         task.cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 def _handle_signal(stop_event: asyncio.Event, loop):
@@ -58,7 +59,6 @@ def main():
         logging.error(e)
     finally:
         logging.info("Program interrupted")
-        loop.close()
 
 
 if __name__ == "__main__":
