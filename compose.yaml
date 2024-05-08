@@ -11,6 +11,19 @@ services:
       - ./db-init:/docker-entrypoint-initdb.d
     restart: always
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - timescaledb
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: always
+
   playground:
     build:
       dockerfile: ingest.Dockerfile
@@ -21,3 +34,4 @@ services:
 
 volumes:
   timescaledb_data:
+  grafana_data:

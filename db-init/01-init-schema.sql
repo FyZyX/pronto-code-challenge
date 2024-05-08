@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
 CREATE TABLE IF NOT EXISTS messages (
     time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     name TEXT NOT NULL,
@@ -8,6 +10,6 @@ CREATE TABLE IF NOT EXISTS messages (
     verification_id TEXT NOT NULL
 );
 
-SELECT create_hypertable('{table_name}', 'time');
+SELECT create_hypertable('messages', 'time');
 
 CREATE INDEX IF NOT EXISTS ix_name_time ON messages (name, time DESC);
