@@ -3,7 +3,7 @@ import L, {Marker} from "leaflet";
 import "leaflet-rotatedmarker";
 
 import 'leaflet/dist/leaflet.css';
-import styles from "./Map.module.css";
+import styles from "./MapVisualizer.module.css";
 import Metric from "../model";
 import markerIcon from "../assets/mining-car.svg"
 
