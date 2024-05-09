@@ -1,5 +1,5 @@
 import {Component, createEffect, createSignal} from 'solid-js';
-import Map from "./components/Map";
+import MapVisualizer from "./components/MapVisualizer";
 
 import styles from './App.module.css';
 import Metric from "./model";
@@ -56,7 +56,7 @@ const App: Component = () => {
                     ))}
                     </tbody>
                 </table>
-                <Map metrics={metrics()}/>
+                <MapVisualizer metrics={metrics()}/>
             </main>
         </div>
     );
