@@ -16,10 +16,10 @@ const StatsTable: Component<StatsTableProps> = (props) => {
                 <th>Average</th>
                 <th>Min</th>
                 <th>Max</th>
+                <th>Count</th>
                 <th>Latitude</th>
                 <th>Longitude</th>
                 <th>Heading</th>
-                <th>Count</th>
             </tr>
             </thead>
             <tbody>
@@ -29,10 +29,10 @@ const StatsTable: Component<StatsTableProps> = (props) => {
                     <td>{metric.mean_measurement.toFixed(1)}</td>
                     <td>{metric.min_measurement.toFixed(1)}</td>
                     <td>{metric.max_measurement.toFixed(1)}</td>
+                    <td>{metric.count}</td>
                     <td>{metric.last_latitude.toFixed(2)}</td>
                     <td>{metric.last_longitude.toFixed(2)}</td>
                     <td>{metric.last_heading.toFixed(2)}</td>
-                    <td>{metric.count}</td>
                 </tr>
             ))}
             </tbody>
