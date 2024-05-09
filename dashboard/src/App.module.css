@@ -11,35 +11,3 @@
     font-size: calc(10px + 2vmin);
     color: white;
 }
-
-table {
-    width: 70%; /* Set table width relative to its container */
-    margin: 20px auto; /* Center the table horizontally and add margin around it */
-    border-collapse: collapse; /* Ensures borders between cells are merged */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow around table */
-}
-
-th, td {
-    padding: 12px 15px; /* Padding inside cells for spacing */
-    border: 1px solid #ddd; /* Light grey border for each cell */
-    text-align: left; /* Align text to the left within cells */
-}
-
-th {
-    background-color: #f4f4f4; /* Light grey background for header cells */
-    color: #333; /* Dark text color for contrast */
-    font-weight: bold; /* Make header text bold */
-}
-
-tbody tr:nth-child(even) {
-  background-color: #f9f9f9; /* Zebra striping for rows */
-}
-
-tbody tr:hover {
-  background-color: #f1f1f1; /* Highlight on hover for rows */
-}
-
-caption {
-  font-size: larger; /* Larger text for the caption */
-  margin: 10px; /* Space around the caption */
-}

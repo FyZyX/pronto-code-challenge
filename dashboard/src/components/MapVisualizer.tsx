@@ -7,11 +7,11 @@ import styles from "./MapVisualizer.module.css";
 import Metric from "../model";
 import markerIcon from "../assets/mining-car.svg"
 
-interface MapProps {
+interface MapVisualizerProps {
     metrics: Metric[];
 }
 
-const MapVisualizer: Component<MapProps> = props => {
+const MapVisualizer: Component<MapVisualizerProps> = props => {
     let mapContainer: HTMLDivElement | undefined;
     let map: L.Map;
     const markers = new Map<string, L.Marker>();
