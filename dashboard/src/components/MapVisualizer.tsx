@@ -47,9 +47,21 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
         requestAnimationFrame(animate);
     }
 
+    const centerMap = (metrics: Metric[]) => {
+        const bounds = L.latLngBounds([]);
+        props.metrics.forEach((metric: Metric) => {
+            const latLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
+            bounds.extend(latLng);
+        })
+
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, {padding: [50, 50]});  // Adjust padding as needed
+        }
+    }
+
     onMount(() => {
         if (mapContainer) {
-            map = L.map(mapContainer).setView([51.505, -0.09], 2);
+            map = L.map(mapContainer).setView([38.30, -123.30], 7);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -60,24 +72,20 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
     createEffect(() => {
         if (map) {
             const newMetrics = new Set();
-            const bounds = L.latLngBounds([]);
-            props.metrics.forEach((metric: Metric) => {
-                const latLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
-            })
 
             // Add new markers
             props.metrics.forEach((metric: Metric) => {
                 newMetrics.add(metric.name);
 
                 let marker = markers.get(metric.name);
-                const targetLatLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
-                const targetHeading = metric.last_heading;
-
                 if (marker) {
                     const startLatLng = marker.getLatLng();
                     const startHeading = marker.options.rotationAngle || metric.last_heading;
 
-                    animateMarker(marker, startLatLng, startHeading, targetLatLng, targetHeading, 2000);
+                    const targetLatLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
+                    const targetHeading = metric.last_heading;
+
+                    animateMarker(marker, startLatLng, startHeading, targetLatLng, targetHeading, 1000);
                 } else {
                     marker = L.marker(
                         [metric.last_latitude, metric.last_longitude],
@@ -93,13 +101,7 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
 
                     markers.set(metric.name, marker);
                 }
-
-                bounds.extend(targetLatLng);
             });
-
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, {padding: [50, 50]});  // Adjust padding as needed
-            }
 
             // Remove markers that are no longer in the new data
             markers.forEach((marker, name) => {
@@ -110,7 +112,6 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
             });
         }
     });
-
 
     onCleanup(() => {
         if (map) map.remove();

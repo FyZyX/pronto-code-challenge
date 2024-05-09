@@ -13,12 +13,12 @@ const StatsTable: Component<StatsTableProps> = (props) => {
             <thead>
             <tr>
                 <th>Name</th>
-                <th>Average Measurement</th>
-                <th>Min Measurement</th>
-                <th>Max Measurement</th>
-                <th>Latest Latitude</th>
-                <th>Latest Longitude</th>
-                <th>Latest Heading</th>
+                <th>Average</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Heading</th>
                 <th>Count</th>
             </tr>
             </thead>
