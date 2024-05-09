@@ -1,5 +1,5 @@
 import {Component, createEffect, onCleanup, onMount} from "solid-js";
-import L from "leaflet";
+import L, {Marker} from "leaflet";
 import "leaflet-rotatedmarker";
 
 import 'leaflet/dist/leaflet.css';
@@ -22,6 +22,31 @@ const MapVisualizer: Component<MapProps> = props => {
         iconAnchor: [15, 15],
     });
 
+    const animateMarker = (
+        marker: Marker,
+        startLatLng: L.LatLng, startHeading: number,
+        targetLatLng: L.LatLng, targetHeading: number,
+        duration: number,
+    ) => {
+        const startTime = performance.now();
+        const animate = (currentTime: number) => {
+            const elapsedTime = currentTime - startTime;
+            const progress = elapsedTime / duration;
+            const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
+            const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
+            const heading = startHeading + (targetHeading - startHeading) * progress;
+            marker.setLatLng([lat, lng]);
+            marker.setRotationAngle(heading);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                marker.setLatLng(targetLatLng);
+            }
+        };
+        requestAnimationFrame(animate);
+    }
+
     onMount(() => {
         if (mapContainer) {
             map = L.map(mapContainer).setView([51.505, -0.09], 2);
@@ -35,17 +60,24 @@ const MapVisualizer: Component<MapProps> = props => {
     createEffect(() => {
         if (map) {
             const newMetrics = new Set();
+            const bounds = L.latLngBounds([]);
+            props.metrics.forEach((metric: Metric) => {
+                const latLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
+            })
 
             // Add new markers
-            const bounds = L.latLngBounds([]);
             props.metrics.forEach((metric: Metric) => {
                 newMetrics.add(metric.name);
 
                 let marker = markers.get(metric.name);
+                const targetLatLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
+                const targetHeading = metric.last_heading;
+
                 if (marker) {
-                    marker
-                        .setLatLng([metric.last_latitude, metric.last_longitude])
-                        .setRotationAngle(metric.last_heading);
+                    const startLatLng = marker.getLatLng();
+                    const startHeading = marker.options.rotationAngle || metric.last_heading;
+
+                    animateMarker(marker, startLatLng, startHeading, targetLatLng, targetHeading, 2000);
                 } else {
                     marker = L.marker(
                         [metric.last_latitude, metric.last_longitude],
@@ -62,14 +94,12 @@ const MapVisualizer: Component<MapProps> = props => {
                     markers.set(metric.name, marker);
                 }
 
-                bounds.extend(marker.getLatLng());
+                bounds.extend(targetLatLng);
             });
-
 
             if (bounds.isValid()) {
                 map.fitBounds(bounds, {padding: [50, 50]});  // Adjust padding as needed
             }
-
 
             // Remove markers that are no longer in the new data
             markers.forEach((marker, name) => {

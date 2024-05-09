@@ -1,4 +1,4 @@
-import {Component, createEffect, createSignal} from 'solid-js';
+import {Component, createEffect, createSignal, onCleanup} from 'solid-js';
 import MapVisualizer from "./components/MapVisualizer";
 
 import styles from './App.module.css';
@@ -20,6 +20,10 @@ const App: Component = () => {
     createEffect(() => {
         fetchMetrics()
             .catch(error => console.error("Error fetching metrics:", error));
+
+        const interval = setInterval(fetchMetrics, 2000);
+
+        onCleanup(() => clearInterval(interval));
     });
 
     return (
