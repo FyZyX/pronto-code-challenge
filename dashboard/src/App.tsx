@@ -26,7 +26,7 @@ const App: Component = () => {
         fetchMetrics()
             .catch(error => console.error("Error fetching metrics:", error));
 
-        const interval = setInterval(fetchMetrics, 2000);
+        const interval = setInterval(fetchMetrics, 5000);
 
         onCleanup(() => clearInterval(interval));
     });

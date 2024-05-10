@@ -22,26 +22,45 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
         iconAnchor: [15, 15],
     });
 
-    const animateMarker = (
+    const createMarker = (metric: Metric) => {
+        return L.marker(
+            [metric.last_latitude, metric.last_longitude],
+            {
+                icon: icon,
+                rotationAngle: metric.last_heading,
+            },
+        );
+    }
+
+    const updateMarker = (
         marker: Marker,
-        startLatLng: L.LatLng, startHeading: number,
-        targetLatLng: L.LatLng, targetHeading: number,
+        metric: Metric,
         duration: number,
     ) => {
         const startTime = performance.now();
+
+        const startLatLng = marker.getLatLng();
+        const startHeading = marker.options.rotationAngle || metric.last_heading;
+        const targetLatLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
+        const targetHeading = metric.last_heading;
+        const measurement = metric.mean_measurement.toFixed(1);
+
         const animate = (currentTime: number) => {
             const elapsedTime = currentTime - startTime;
             const progress = elapsedTime / duration;
             const lat = startLatLng.lat + (targetLatLng.lat - startLatLng.lat) * progress;
             const lng = startLatLng.lng + (targetLatLng.lng - startLatLng.lng) * progress;
             const heading = startHeading + (targetHeading - startHeading) * progress;
+
             marker.setLatLng([lat, lng]);
             marker.setRotationAngle(heading);
+            marker.bindPopup(`<b>${metric.name}</b><br>Measurement: ${measurement}`);
 
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
                 marker.setLatLng(targetLatLng);
+                marker.setRotationAngle(targetHeading);
             }
         };
         requestAnimationFrame(animate);
@@ -70,47 +89,31 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
     });
 
     createEffect(() => {
-        if (map) {
-            const newMetrics = new Set();
+        if (!map) return;
 
-            // Add new markers
-            props.metrics.forEach((metric: Metric) => {
-                newMetrics.add(metric.name);
+        const newMetrics = new Set();
 
-                let marker = markers.get(metric.name);
-                if (marker) {
-                    const startLatLng = marker.getLatLng();
-                    const startHeading = marker.options.rotationAngle || metric.last_heading;
+        // Add new markers
+        props.metrics.forEach((metric: Metric) => {
+            newMetrics.add(metric.name);
 
-                    const targetLatLng = new L.LatLng(metric.last_latitude, metric.last_longitude);
-                    const targetHeading = metric.last_heading;
+            let marker = markers.get(metric.name);
+            if (marker) {
+                updateMarker(marker, metric, 1000);
+            } else {
+                marker = createMarker(metric);
+                marker.addTo(map);
+                markers.set(metric.name, marker);
+            }
+        });
 
-                    animateMarker(marker, startLatLng, startHeading, targetLatLng, targetHeading, 1000);
-                } else {
-                    marker = L.marker(
-                        [metric.last_latitude, metric.last_longitude],
-                        {
-                            icon: icon,
-                            rotationAngle: metric.last_heading,
-                        },
-                    ).addTo(map);
-
-                    marker.bindPopup(
-                        `<b>${metric.name}</b><br>Measurement: ${metric.mean_measurement.toFixed(1)}`
-                    );
-
-                    markers.set(metric.name, marker);
-                }
-            });
-
-            // Remove markers that are no longer in the new data
-            markers.forEach((marker, name) => {
-                if (!newMetrics.has(name)) {
-                    map.removeLayer(marker);
-                    markers.delete(name);
-                }
-            });
-        }
+        // Remove markers that are no longer in the new data
+        markers.forEach((marker, name) => {
+            if (!newMetrics.has(name)) {
+                map.removeLayer(marker);
+                markers.delete(name);
+            }
+        });
     });
 
     onCleanup(() => {
