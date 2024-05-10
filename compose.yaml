@@ -42,6 +42,18 @@ services:
     depends_on:
       - timescaledb
 
+  dashboard:
+    build:
+      dockerfile: pronto.dashboard.Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./dashboard:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    depends_on:
+      - metrics-api
+
 volumes:
   timescaledb_data:
   grafana_data:
+  node_modules:
