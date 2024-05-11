@@ -1,5 +1,5 @@
 import {Component} from "solid-js";
-import Metric from "../model";
+import {Metric} from "../model";
 
 import styles from "./StatsTable.module.css";
 

@@ -4,6 +4,7 @@ import StatsTable from "./components/StatsTable";
 import {Metric, LiveMetrics} from "./model";
 
 import styles from './App.module.css';
+import Dashboard from "./components/Dashboard";
 
 const [liveMetrics, setLiveMetrics] = createSignal<LiveMetrics>({});
 
@@ -93,10 +94,7 @@ const App: Component = () => {
             <header class={styles.header}>
                 <h1>Key Metrics</h1>
             </header>
-            <main>
-                <StatsTable metrics={metrics()}/>
-                <MapVisualizer metrics={metrics()}/>
-            </main>
+            <Dashboard metrics={metrics()}/>
         </div>
     );
 };
