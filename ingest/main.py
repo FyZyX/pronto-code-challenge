@@ -30,6 +30,7 @@ async def _stop_all_tasks():
     for task in tasks:
         task.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
+    await MessageHandler.close()
 
 
 def _handle_signal(stop_event: asyncio.Event, loop):

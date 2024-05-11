@@ -4,6 +4,8 @@ from typing import Callable
 
 import zmq.asyncio
 
+from .handler import MessageHandler
+
 
 class Ingestor:
     def __init__(self, server_url: str, on_message: Callable[[str], None]):
@@ -26,6 +28,7 @@ class Ingestor:
         self._context.term()
 
     async def ingest(self, stop_event: asyncio.Event, topic: str = ""):
+        await MessageHandler.connect()
         self._subscribe(topic)
 
         try:
