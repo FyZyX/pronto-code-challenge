@@ -1,6 +1,10 @@
+import asyncio
+import json
+import logging
 import os
 
-from fastapi import FastAPI
+import redis.asyncio as redis
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg_pool import AsyncConnectionPool
 
@@ -12,10 +16,18 @@ DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 DB_NAME = os.environ.get("POSTGRES_DB")
 DATABASE_DSN = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}"
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+
 DASHBOARD_HOST = os.environ.get("DASHBOARD_HOST", "localhost")
 DASHBOARD_PORT = os.environ.get("DASHBOARD_PORT", 3001)
 
 pool = AsyncConnectionPool(DATABASE_DSN, open=False)
+redis_pool = redis.ConnectionPool.from_url(REDIS_URL)
+
+clients = {}
+client_subscriptions = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,11 +41,62 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     await pool.open()
+    start_listening_to_redis()
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await pool.close()
+
+
+def start_listening_to_redis():
+    asyncio.create_task(listen_to_redis())
+
+
+async def distribute_message_to_clients(message_data):
+    for client_id, websocket in clients.items():
+        if message_data['name'] in client_subscriptions[client_id]:
+            await websocket.send_json(message_data)
+
+
+async def cleanup_client(client_id: str):
+    clients.pop(client_id, None)
+    client_subscriptions.pop(client_id, None)
+
+
+async def listen_to_redis():
+    redis_client = redis.Redis(connection_pool=redis_pool)
+
+    async with redis_client.pubsub(ignore_subscribe_messages=True) as pubsub:
+        await pubsub.subscribe('messages')
+
+        async for message in pubsub.listen():
+            if message['type'] == 'message':
+                message_data = json.loads(message['data'])
+                await distribute_message_to_clients(message_data)
+
+        await pubsub.unsubscribe('messages')
+
+
+@app.websocket("/ws")
+async def live_location_data(websocket: WebSocket):
+    client_id = f"client_{websocket.client.host}_{websocket.client.port}"
+    clients[client_id] = websocket
+    client_subscriptions[client_id] = set()
+
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            data = json.loads(message)
+            if data['action'] == 'subscribe':
+                client_subscriptions[client_id].add(data['name'])
+            elif data['action'] == 'unsubscribe':
+                client_subscriptions[client_id].discard(data['name'])
+    except WebSocketDisconnect:
+        logging.info(f"Client {client_id} disconnected")
+    finally:
+        await cleanup_client(client_id)
 
 
 @app.get("/metrics/top10")

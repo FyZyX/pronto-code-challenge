@@ -50,6 +50,8 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      REDIS_HOST: redis
     depends_on:
       - timescaledb
 
