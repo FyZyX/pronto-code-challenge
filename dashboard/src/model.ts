@@ -1,3 +1,11 @@
+export type SummaryStats = {
+    name: string;
+    mean_measurement: number;
+    min_measurement: number;
+    max_measurement: number;
+    count: number;
+};
+
 export type Metric = {
     name: string;
     mean_measurement: number;

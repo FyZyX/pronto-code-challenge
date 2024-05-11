@@ -1,7 +1,5 @@
 import {Component, createEffect, createSignal, onCleanup, onMount} from 'solid-js';
-import MapVisualizer from "./components/MapVisualizer";
-import StatsTable from "./components/StatsTable";
-import {Metric, LiveMetrics} from "./model";
+import {LiveMetrics, Metric, SummaryStats} from "./model";
 
 import styles from './App.module.css';
 import Dashboard from "./components/Dashboard";
@@ -53,38 +51,57 @@ function sendUnsubscription(ws: WebSocket, names: string[]) {
 
 const App: Component = () => {
     const [metrics, setMetrics] = createSignal<Metric[]>([]);
+    const [summaryStats, setSummaryStats] = createSignal<SummaryStats[]>([]);
     const [ws, setWs] = createSignal<WebSocket | null>(null);
+
+    const top10EndpointURL = endpointURL('metrics/top10')
+    const summaryStatsEndpointURL = endpointURL('summary-stats')
 
     onMount(() => {
         setWs(setupWebSocket());
     });
 
-    const top10EndpointURL = endpointURL('metrics/top10')
-
-    const fetchMetrics = async () => {
-        const response = await fetch(top10EndpointURL);
-        const data = await response.json();
-
+    const updateSubscriptions = (currentNames: string[], newNames: string[]) => {
         const socket = ws();
-        if (socket) {
-            const currentNames = metrics().map(metric => metric.name);
-            const newNames = data.map((metric: Metric) => metric.name);
+        if (!socket) return;
 
-            const namesToSubscribe = newNames.filter((name: string) => !currentNames.includes(name));
-            const namesToUnsubscribe = currentNames.filter(name => !newNames.includes(name));
+        const subscribes = newNames.filter(name => !currentNames.includes(name));
+        const unsubscribes = currentNames.filter(name => !newNames.includes(name));
 
-            sendSubscription(socket, namesToSubscribe);
-            sendUnsubscription(socket, namesToUnsubscribe);
-        }
+        sendSubscription(socket, subscribes);
+        sendUnsubscription(socket, unsubscribes);
+    };
 
-        setMetrics(data);
+    const fetchSummaryStats = async (): Promise<SummaryStats[]> => {
+        const response = await fetch(summaryStatsEndpointURL);
+        return await response.json();
+    };
+
+    const fetchMetrics = async (): Promise<Metric[]> => {
+        const response = await fetch(top10EndpointURL);
+        return await response.json();
+    };
+
+    const updateKeyMetrics = async () => {
+        const newSummaryStats = await fetchSummaryStats();
+        const newMetrics = await fetchMetrics();
+
+        const currentNames = metrics().map(metric => metric.name);
+        const newNames = newMetrics.map(metric => metric.name);
+        updateSubscriptions(currentNames, newNames)
+
+        setSummaryStats(newSummaryStats);
+        setMetrics(newMetrics);
     };
 
     createEffect(() => {
-        fetchMetrics()
-            .catch(error => console.error("Error fetching metrics:", error));
+        updateKeyMetrics()
+            .catch(error => console.error("Error updating key metrics:", error));
 
-        const interval = setInterval(fetchMetrics, 5000);
+        const interval = setInterval(() => {
+            updateKeyMetrics()
+                .catch(error => console.error("Error updating key metrics:", error));
+        }, 5000);
 
         onCleanup(() => clearInterval(interval));
     });
@@ -94,7 +111,7 @@ const App: Component = () => {
             <header class={styles.header}>
                 <h1>Key Metrics</h1>
             </header>
-            <Dashboard metrics={metrics()}/>
+            <Dashboard metrics={metrics()} summaryStats={summaryStats()}/>
         </div>
     );
 };
