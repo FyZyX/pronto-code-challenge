@@ -9,7 +9,7 @@ import EntityGrid from "./EntityGrid";
 interface DashboardProps {
     summaryStats: SummaryStats[];
     metrics: Metric[];
-    // liveMetrics: LiveMetrics;
+    liveMetrics: LiveMetrics;
 }
 
 const Dashboard: Component<DashboardProps> = (props) => {

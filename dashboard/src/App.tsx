@@ -111,7 +111,10 @@ const App: Component = () => {
             <header class={styles.header}>
                 <h1>Key Metrics</h1>
             </header>
-            <Dashboard metrics={metrics()} summaryStats={summaryStats()}/>
+            <Dashboard metrics={metrics()}
+                       summaryStats={summaryStats()}
+                       liveMetrics={liveMetrics()}
+            />
         </div>
     );
 };
