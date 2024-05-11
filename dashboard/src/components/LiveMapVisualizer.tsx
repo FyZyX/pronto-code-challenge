@@ -4,11 +4,12 @@ import "leaflet-rotatedmarker";
 
 import 'leaflet/dist/leaflet.css';
 import styles from "./MapVisualizer.module.css";
-import {Metric} from "../model";
+import {Metric, LiveMetrics, LiveMetric} from "../model";
 import markerIcon from "../assets/mining-car.svg"
 
 interface MapVisualizerProps {
     metrics: Metric[];
+    liveMetrics: LiveMetrics;
 }
 
 const MapVisualizer: Component<MapVisualizerProps> = props => {
@@ -28,6 +29,16 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
             {
                 icon: icon,
                 rotationAngle: metric.last_heading,
+            },
+        );
+    }
+
+    const createLiveMarker = (metric: LiveMetric) => {
+        return L.marker(
+            [metric.latitude, metric.longitude],
+            {
+                icon: icon,
+                rotationAngle: metric.heading,
             },
         );
     }
@@ -66,6 +77,20 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
         requestAnimationFrame(animate);
     }
 
+    const updateLiveMarker = (
+        marker: Marker,
+        metric: LiveMetric,
+        duration: number,
+    ) => {
+        const latLng = new L.LatLng(metric.latitude, metric.longitude);
+        const heading = metric.heading;
+        const measurement = metric.measurement.toFixed(1);
+
+        marker.setLatLng(latLng);
+        marker.setRotationAngle(heading);
+        marker.bindPopup(`<b>${metric.name}</b><br>Measurement: ${measurement}`);
+    }
+
     const centerMap = (metrics: Metric[]) => {
         const bounds = L.latLngBounds([]);
         props.metrics.forEach((metric: Metric) => {
@@ -91,27 +116,15 @@ const MapVisualizer: Component<MapVisualizerProps> = props => {
     createEffect(() => {
         if (!map) return;
 
-        const newMetrics = new Set();
-
-        // Add new markers
-        props.metrics.forEach((metric: Metric) => {
-            newMetrics.add(metric.name);
-
+        console.log(props.liveMetrics)
+        Object.entries(props.liveMetrics).forEach(([name, metric]) => {
             let marker = markers.get(metric.name);
             if (marker) {
-                updateMarker(marker, metric, 1000);
+                updateLiveMarker(marker, metric, 200);
             } else {
-                marker = createMarker(metric);
+                marker = createLiveMarker(metric);
                 marker.addTo(map);
                 markers.set(metric.name, marker);
-            }
-        });
-
-        // Remove markers that are no longer in the new data
-        markers.forEach((marker, name) => {
-            if (!newMetrics.has(name)) {
-                map.removeLayer(marker);
-                markers.delete(name);
             }
         });
     });

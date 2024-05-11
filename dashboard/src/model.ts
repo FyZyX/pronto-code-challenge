@@ -1,4 +1,4 @@
-type Metric = {
+export type Metric = {
     name: string;
     mean_measurement: number;
     min_measurement: number;
@@ -9,4 +9,15 @@ type Metric = {
     count: number;
 };
 
-export default Metric;
+export type LiveMetric = {
+    name: string;
+    latitude: number;
+    longitude: number;
+    heading: number;
+    measurement: number;
+    verification_id: string;
+};
+
+export interface LiveMetrics {
+    [key: string]: LiveMetric;
+}

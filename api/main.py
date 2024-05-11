@@ -89,11 +89,17 @@ async def live_location_data(websocket: WebSocket):
         while True:
             message = await websocket.receive_text()
             data = json.loads(message)
-            if data['action'] == 'subscribe':
-                client_subscriptions[client_id].add(data['name'])
-            elif data['action'] == 'unsubscribe':
-                client_subscriptions[client_id].discard(data['name'])
-    except WebSocketDisconnect:
+            action = data.get("action")
+            names = data.get("names")
+            if not action or not names:
+                continue
+
+            if action == 'subscribe':
+                client_subscriptions[client_id].update(names)
+            elif action == 'unsubscribe':
+                client_subscriptions[client_id].difference_update(names)
+
+    except WebSocketDisconnect as e:
         logging.info(f"Client {client_id} disconnected")
     finally:
         await cleanup_client(client_id)
