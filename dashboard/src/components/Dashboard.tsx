@@ -7,16 +7,14 @@ import {LiveMetric, LiveMetrics, Metric, SummaryStats} from "../model";
 
 import styles from './Dashboard.module.css';
 
-
-const [liveMetrics, setLiveMetrics] = createSignal<LiveMetrics>({});
-
-
 class DataService {
     apiHost = import.meta.env.VITE_API_HOST || 'localhost';
     apiPort = import.meta.env.VITE_API_PORT || 8080;
 
-    top10EndpointURL = this.endpointURL('metrics/top10')
-    summaryStatsEndpointURL = this.endpointURL('summary-stats')
+    endpoints = {
+        top10Metrics: this.endpointURL('metrics/top10'),
+        summaryStats: this.endpointURL('summary-stats'),
+    };
 
     websocketURL(): string {
         return `ws://${this.apiHost}:${this.apiPort}/ws`;
@@ -56,23 +54,15 @@ class DataService {
             action: 'unsubscribe',
             names: names
         }));
-
-        setLiveMetrics(prevMetrics => {
-            const newMetrics = {...prevMetrics};
-            names.forEach(name => {
-                delete newMetrics[name];
-            });
-            return newMetrics;
-        });
     }
 
     fetchSummaryStats = async (): Promise<SummaryStats[]> => {
-        const response = await fetch(this.summaryStatsEndpointURL);
+        const response = await fetch(this.endpoints.top10Metrics);
         return await response.json();
     };
 
     fetchMetrics = async (): Promise<Metric[]> => {
-        const response = await fetch(this.top10EndpointURL);
+        const response = await fetch(this.endpoints.summaryStats);
         return await response.json();
     };
 }
@@ -80,6 +70,7 @@ class DataService {
 
 const Dashboard: Component = () => {
     const [metrics, setMetrics] = createSignal<Metric[]>([]);
+    const [liveMetrics, setLiveMetrics] = createSignal<LiveMetrics>({});
     const [summaryStats, setSummaryStats] = createSignal<SummaryStats[]>([]);
     const [liveData, setLiveData] = createSignal(false);
     const [ws, setWs] = createSignal<WebSocket | null>(null);
@@ -110,6 +101,14 @@ const Dashboard: Component = () => {
 
         dataService.sendSubscription(socket, subscribes);
         dataService.sendUnsubscription(socket, unsubscribes);
+
+        setLiveMetrics(prevMetrics => {
+            const newMetrics = {...prevMetrics};
+            unsubscribes.forEach(name => {
+                delete newMetrics[name];
+            });
+            return newMetrics;
+        });
     };
 
     const updateKeyMetrics = async () => {
