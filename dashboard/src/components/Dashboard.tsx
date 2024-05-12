@@ -1,4 +1,4 @@
-import {Component, createEffect, createSignal, onCleanup, onMount} from 'solid-js';
+import {Component, createEffect, createSignal, onCleanup, onMount, Show} from 'solid-js';
 import MapVisualizer from "./MapVisualizer";
 import LiveMapVisualizer from "./LiveMapVisualizer";
 import StatsTable from "./StatsTable";
@@ -57,12 +57,12 @@ class DataService {
     }
 
     fetchSummaryStats = async (): Promise<SummaryStats[]> => {
-        const response = await fetch(this.endpoints.top10Metrics);
+        const response = await fetch(this.endpoints.summaryStats);
         return await response.json();
     };
 
     fetchMetrics = async (): Promise<Metric[]> => {
-        const response = await fetch(this.endpoints.summaryStats);
+        const response = await fetch(this.endpoints.top10Metrics);
         return await response.json();
     };
 }
@@ -139,16 +139,13 @@ const Dashboard: Component = () => {
 
     return (
         <main class={styles.dashbaord}>
-            {liveData()
-                ? <EntityGrid summaryStats={summaryStats()}/>
-                : <StatsTable metrics={metrics()}/>
-            }
+            <Show when={liveData()} fallback={<StatsTable metrics={metrics()}/>}>
+                <EntityGrid summaryStats={summaryStats()}/>
+            </Show>
             <button onClick={() => setLiveData(!liveData())}>Toggle Live Data</button>
-            {liveData()
-                ? <LiveMapVisualizer liveMetrics={liveMetrics()}/>
-                : <MapVisualizer metrics={metrics()}/>
-            }
-
+            <Show when={liveData()} fallback={<MapVisualizer metrics={metrics()}/>}>
+                <LiveMapVisualizer liveMetrics={liveMetrics()}/>
+            </Show>
         </main>
     );
 };
