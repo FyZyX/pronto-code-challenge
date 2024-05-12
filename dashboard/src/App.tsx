@@ -47,6 +47,14 @@ function sendUnsubscription(ws: WebSocket, names: string[]) {
         action: 'unsubscribe',
         names: names
     }));
+
+    setLiveMetrics(prevMetrics => {
+        const newMetrics = {...prevMetrics};
+        names.forEach(name => {
+            delete newMetrics[name];
+        });
+        return newMetrics;
+    });
 }
 
 const App: Component = () => {
@@ -59,6 +67,13 @@ const App: Component = () => {
 
     onMount(() => {
         setWs(setupWebSocket());
+    });
+
+    onCleanup(() => {
+        const socket = ws();
+        if (socket) {
+            socket.close();
+        }
     });
 
     const updateSubscriptions = (currentNames: string[], newNames: string[]) => {
