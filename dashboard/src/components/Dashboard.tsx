@@ -113,24 +113,26 @@ const Dashboard: Component = () => {
     };
 
     const updateKeyMetrics = async () => {
-        const newSummaryStats = await dataService.fetchSummaryStats();
-        const newMetrics = await dataService.fetchMetrics();
+        try {
+            const newSummaryStats = await dataService.fetchSummaryStats();
+            const newMetrics = await dataService.fetchMetrics();
 
-        const currentNames = metrics().map(metric => metric.name);
-        const newNames = newMetrics.map(metric => metric.name);
-        updateSubscriptions(currentNames, newNames)
+            const currentNames = metrics().map(metric => metric.name);
+            const newNames = newMetrics.map(metric => metric.name);
+            updateSubscriptions(currentNames, newNames)
 
-        setSummaryStats(newSummaryStats);
-        setMetrics(newMetrics);
+            setSummaryStats(newSummaryStats);
+            setMetrics(newMetrics);
+        } catch (error) {
+            console.error("Error updating key metrics:", error)
+        }
     };
 
     createEffect(() => {
         updateKeyMetrics()
-            .catch(error => console.error("Error updating key metrics:", error));
 
         const interval = setInterval(() => {
             updateKeyMetrics()
-                .catch(error => console.error("Error updating key metrics:", error));
         }, 5000);
 
         onCleanup(() => clearInterval(interval));
