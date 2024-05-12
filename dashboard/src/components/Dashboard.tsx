@@ -1,10 +1,11 @@
-import {Component} from 'solid-js';
+import {Component, createSignal} from 'solid-js';
 import MapVisualizer from "./MapVisualizer";
 import StatsTable from "./StatsTable";
 import {LiveMetrics, Metric, SummaryStats} from "../model";
 
 import styles from './Dashboard.module.css';
 import EntityGrid from "./EntityGrid";
+import LiveMapVisualizer from "./LiveMapVisualizer";
 
 interface DashboardProps {
     summaryStats: SummaryStats[];
@@ -13,11 +14,18 @@ interface DashboardProps {
 }
 
 const Dashboard: Component<DashboardProps> = (props) => {
+    const [liveData, setLiveData] = createSignal(false);
+
     return (
         <main class={styles.dashbaord}>
             <StatsTable metrics={props.metrics}/>
             <EntityGrid summaryStats={props.summaryStats}/>
-            <MapVisualizer metrics={props.metrics}/>
+            <button onClick={() => setLiveData(!liveData())}>Toggle Live Data</button>
+            {liveData()
+                ? <LiveMapVisualizer liveMetrics={props.liveMetrics}/>
+                : <MapVisualizer metrics={props.metrics}/>
+            }
+
         </main>
     );
 };
