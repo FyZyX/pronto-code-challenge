@@ -127,6 +127,10 @@ const Dashboard: Component = () => {
         }
     };
 
+    const toggleLiveData = () => {
+        setLiveData(!liveData())
+    };
+
     createEffect(() => {
         updateKeyMetrics()
 
@@ -138,11 +142,16 @@ const Dashboard: Component = () => {
     });
 
     return (
-        <main class={styles.dashbaord}>
-            <Show when={liveData()} fallback={<StatsTable metrics={metrics()}/>}>
-                <EntityGrid summaryStats={summaryStats()}/>
-            </Show>
-            <button onClick={() => setLiveData(!liveData())}>Toggle Live Data</button>
+        <main class={styles.dashboard}>
+            <div class={styles.summaryView}>
+                <div class={styles.viewControls}>
+                    <button onClick={toggleLiveData}>Toggle Live Data</button>
+                </div>
+
+                <Show when={liveData()} fallback={<StatsTable metrics={metrics()}/>}>
+                    <EntityGrid summaryStats={summaryStats()}/>
+                </Show>
+            </div>
             <Show when={liveData()} fallback={<MapVisualizer metrics={metrics()}/>}>
                 <LiveMapVisualizer liveMetrics={liveMetrics()}/>
             </Show>

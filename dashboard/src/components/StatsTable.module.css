@@ -1,6 +1,6 @@
 table.statsTable {
     height: 50vh;
-    margin: auto 150px;
+    margin: auto;
     border-collapse: collapse; /* Ensures borders between cells are merged */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow around table */
 }

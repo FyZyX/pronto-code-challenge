@@ -12,9 +12,3 @@
     font-size: calc(5px + 2vmin);
     color: white;
 }
-
-main {
-    display: flex;
-    height: 90vh;
-    background-color: #8c8c8f;
-}
