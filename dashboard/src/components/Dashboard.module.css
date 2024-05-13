@@ -1,16 +1,41 @@
 .dashboard {
     display: flex;
     height: 90vh;
-    background-color: #8c8c8f;
-    overflow: scroll;
+    background-color: #464f5c;
+    overflow: auto;
 }
 
 .summaryView {
     width: 50vw;
+    display: flex;
+    flex-direction: column;
 }
 
 .viewControls {
-    margin: 20px 0;
+    margin: 10px 0;
     display: flex;
     justify-content: center;
+    padding: 10px 0;
+}
+
+.viewControls button {
+    padding: 10px 20px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #4a69bd;
+    border: none;
+    border-radius: 5px; /* Rounded corners for the button */
+    cursor: pointer; /* Hand cursor on hover */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Soft shadow for depth */
+    transition: background-color 0.3s, transform 0.2s; /* Smooth transition for visual feedback */
+}
+
+.viewControls button:hover {
+    background-color: #1e3799; /* Darker shade on hover for button */
+    transform: translateY(-2px); /* Slight raise effect on hover */
+}
+
+.viewControls button:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 0 3px rgba(74,105,189,0.5); /* Custom focus ring that matches the button color */
 }

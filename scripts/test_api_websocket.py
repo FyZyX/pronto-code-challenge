@@ -23,8 +23,8 @@ async def listen_to_messages(uri, names_to_subscribe):
 if __name__ == "__main__":
     uri = "ws://localhost:8080/ws"
     names_to_subscribe = [
-        "sensor1",
-        "sensor2",
+        "AnhHNB",
+        "BBwBTJ",
     ]
 
     try:

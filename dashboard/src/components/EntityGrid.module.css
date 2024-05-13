@@ -1,7 +1,7 @@
 .entityGrid {
     margin: 0 auto;
     display: grid;
-    width: 50%;
+    width: 65%;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
     padding: 20px;
@@ -9,14 +9,15 @@
 
 .summaryStats {
     padding: 20px;
-    background-color: #2a2f3a; /* Dark grey-blue */
+    background-color: #282c34;
     color: #ffffff;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s; /* Smooth transform on hover */
+    transition: transform 0.2s;
 }
 
 .summaryStats:hover {
+    background-color: #303442; /* Dark grey-blue */
     transform: translateY(-5px); /* Slight lift on hover */
 }
 
