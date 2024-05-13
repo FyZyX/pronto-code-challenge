@@ -82,7 +82,7 @@ async def listen_to_redis():
 async def live_location_data(websocket: WebSocket):
     client_id = f"client_{websocket.client.host}_{websocket.client.port}"
     clients[client_id] = websocket
-    client_subscriptions[client_id] = set()
+    client_subscriptions[client_id] = []
 
     await websocket.accept()
     try:
@@ -95,9 +95,9 @@ async def live_location_data(websocket: WebSocket):
                 continue
 
             if action == 'subscribe':
-                client_subscriptions[client_id].update(names)
+                client_subscriptions[client_id] = names
             elif action == 'unsubscribe':
-                client_subscriptions[client_id].difference_update(names)
+                del client_subscriptions[client_id]
 
     except WebSocketDisconnect as e:
         logging.info(f"Client {client_id} disconnected")

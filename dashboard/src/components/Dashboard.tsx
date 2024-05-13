@@ -1,4 +1,4 @@
-import {Component, createEffect, createSignal, onCleanup, onMount, Show} from 'solid-js';
+import {Component, createEffect, createResource, createSignal, onCleanup, onMount, Show} from 'solid-js';
 import MapVisualizer from "./MapVisualizer";
 import LiveMapVisualizer from "./LiveMapVisualizer";
 import StatsTable from "./StatsTable";
@@ -69,19 +69,25 @@ class DataService {
 
 
 const Dashboard: Component = () => {
-    const [metrics, setMetrics] = createSignal<Metric[]>([]);
+    const dataService = new DataService();
+
+    const [trigger, setTrigger] = createSignal(0);
+    const [metrics, setMetrics] = createResource(trigger, dataService.fetchMetrics);
+    const [summaryStats, setSummaryStats] = createResource(trigger, dataService.fetchSummaryStats);
     const [liveMetrics, setLiveMetrics] = createSignal<LiveMetrics>({});
-    const [summaryStats, setSummaryStats] = createSignal<SummaryStats[]>([]);
     const [liveData, setLiveData] = createSignal(false);
     const [ws, setWs] = createSignal<WebSocket | null>(null);
 
-    const dataService = new DataService();
+    const toggleLiveData = () => {
+        setLiveData(!liveData())
+    };
+
+    const updateLiveMetrics = (liveMetric: LiveMetric) => {
+        setLiveMetrics(prev => ({...prev, [liveMetric.name]: liveMetric}));
+    };
 
     onMount(() => {
-        const handleMessage = (liveMetric: LiveMetric) => {
-            setLiveMetrics(prev => ({...prev, [liveMetric.name]: liveMetric}));
-        };
-        const socket = dataService.newSocket(handleMessage);
+        const socket = dataService.newSocket(updateLiveMetrics);
         setWs(socket);
     });
 
@@ -92,53 +98,36 @@ const Dashboard: Component = () => {
         }
     });
 
-    const updateSubscriptions = (currentNames: string[], newNames: string[]) => {
+    const updateSubscriptions = (names: string[]) => {
         const socket = ws();
         if (!socket) return;
 
-        const subscribes = newNames.filter(name => !currentNames.includes(name));
-        const unsubscribes = currentNames.filter(name => !newNames.includes(name));
-
-        dataService.sendSubscription(socket, subscribes);
-        dataService.sendUnsubscription(socket, unsubscribes);
+        dataService.sendSubscription(socket, names);
 
         setLiveMetrics(prevMetrics => {
             const newMetrics = {...prevMetrics};
-            unsubscribes.forEach(name => {
-                delete newMetrics[name];
+            names.forEach(name => {
+                if (!newMetrics.hasOwnProperty(name)) {
+                    delete newMetrics[name];
+                }
             });
             return newMetrics;
         });
     };
 
-    const updateKeyMetrics = async () => {
-        try {
-            const newSummaryStats = await dataService.fetchSummaryStats();
-            const newMetrics = await dataService.fetchMetrics();
-
-            const currentNames = metrics().map(metric => metric.name);
-            const newNames = newMetrics.map(metric => metric.name);
-            updateSubscriptions(currentNames, newNames)
-
-            setSummaryStats(newSummaryStats);
-            setMetrics(newMetrics);
-        } catch (error) {
-            console.error("Error updating key metrics:", error)
-        }
-    };
-
-    const toggleLiveData = () => {
-        setLiveData(!liveData())
-    };
-
     createEffect(() => {
-        updateKeyMetrics()
-
         const interval = setInterval(() => {
-            updateKeyMetrics()
+            setTrigger(count => count + 1);
         }, 5000);
 
         onCleanup(() => clearInterval(interval));
+    });
+
+    createEffect(() => {
+        const names = metrics()?.map(metric => metric.name);
+        if (names) {
+            updateSubscriptions(names);
+        }
     });
 
     return (
@@ -148,11 +137,11 @@ const Dashboard: Component = () => {
                     <button onClick={toggleLiveData}>Toggle Live Data</button>
                 </div>
 
-                <Show when={liveData()} fallback={<StatsTable metrics={metrics()}/>}>
-                    <EntityGrid summaryStats={summaryStats()}/>
+                <Show when={liveData()} fallback={<StatsTable metrics={metrics() || []}/>}>
+                    <EntityGrid summaryStats={summaryStats() || []}/>
                 </Show>
             </div>
-            <Show when={liveData()} fallback={<MapVisualizer metrics={metrics()}/>}>
+            <Show when={liveData()} fallback={<MapVisualizer metrics={metrics() || []}/>}>
                 <LiveMapVisualizer liveMetrics={liveMetrics()}/>
             </Show>
         </main>
