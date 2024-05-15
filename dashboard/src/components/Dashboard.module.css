@@ -21,21 +21,21 @@
 .viewControls button {
     padding: 10px 20px;
     font-size: 1em;
-    color: #fff;
-    background-color: #4a69bd;
+    color: #333;
+    background-color: #f2b440;
     border: none;
     border-radius: 5px; /* Rounded corners for the button */
     cursor: pointer; /* Hand cursor on hover */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Soft shadow for depth */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
     transition: background-color 0.3s, transform 0.2s; /* Smooth transition for visual feedback */
 }
 
 .viewControls button:hover {
-    background-color: #1e3799; /* Darker shade on hover for button */
+    background-color: #ca9224; /* Darker shade on hover for button */
     transform: translateY(-2px); /* Slight raise effect on hover */
 }
 
 .viewControls button:focus {
     outline: none; /* Remove default focus outline */
-    box-shadow: 0 0 0 3px rgba(74,105,189,0.5); /* Custom focus ring that matches the button color */
+    box-shadow: 0 0 0 3px rgba(242, 180, 64, 0.5); /* Custom focus ring that matches the button color */
 }

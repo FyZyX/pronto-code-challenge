@@ -12,7 +12,7 @@ class DataService {
     apiPort = import.meta.env.VITE_API_PORT || 8080;
 
     endpoints = {
-        top10Metrics: this.endpointURL('metrics/top10'),
+        top10Metrics: this.endpointURL('metrics'),
         summaryStats: this.endpointURL('summary-stats'),
     };
 

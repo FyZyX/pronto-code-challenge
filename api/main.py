@@ -105,11 +105,11 @@ async def live_location_data(websocket: WebSocket):
         await cleanup_client(client_id)
 
 
-@app.get("/metrics/top10")
-async def get_top_metrics():
+@app.get("/metrics")
+async def get_top_metrics(limit: int = 10):
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
-            await cur.execute("""
+            await cur.execute(f"""
                 SELECT
                     name,
                     AVG(measurement) AS avg_measurement,
@@ -122,7 +122,7 @@ async def get_top_metrics():
                 FROM messages
                 GROUP BY name
                 ORDER BY max_measurement DESC
-                LIMIT 10;
+                LIMIT {limit};
             """)
             results = await cur.fetchall()
             return [
